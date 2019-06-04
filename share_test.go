@@ -6,10 +6,10 @@ import (
 )
 
 func TestGen(t *testing.T) {
-	s, err := New(WithName("hello"))
+	s, err := New(nil, withVerbose(true))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	log.Println(s.Name())
+	log.Println(s.IsVerbose())
 }
