@@ -1,4 +1,4 @@
-package share
+package kettle
 
 import (
 	"fmt"
