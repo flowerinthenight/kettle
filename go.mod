@@ -1,4 +1,4 @@
-module github.com/flowerinthenight/share
+module github.com/flowerinthenight/kettle
 
 go 1.12
 
