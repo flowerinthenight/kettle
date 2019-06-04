@@ -6,5 +6,10 @@ import (
 )
 
 func TestGen(t *testing.T) {
-	log.Println("hello")
+	s, err := New(WithName("hello"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	log.Println(s.Name())
 }

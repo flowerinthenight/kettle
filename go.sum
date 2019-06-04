@@ -1,0 +1,7 @@
+github.com/aws/aws-sdk-go v1.19.42 h1:HxUVd+4MxOildxsh4D3fu5ajfpEVcxnjT9oi5cxMOUI=
+github.com/aws/aws-sdk-go v1.19.42/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
+github.com/go-redsync/redsync v1.2.0 h1:a4y3xKQUOA5092Grjps3F5vaRbjA9uoUB59RVwOMttA=
+github.com/go-redsync/redsync v1.2.0/go.mod h1:QClK/s99KRhfKdpxLTMsI5mSu43iLp0NfOneLPie+78=
+github.com/gomodule/redigo v2.0.0+incompatible/go.mod h1:B4C85qUVwatsJoIUNIfCRsp7qO0iAmpGFZ4EELWSbC4=
+github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
+github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
