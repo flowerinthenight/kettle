@@ -106,12 +106,7 @@ func GetTopic(name string, c ...Creds) (*string, error) {
 	return res.TopicArn, nil
 }
 
-func NewPublisher(name string, c ...Creds) (zpubsub.Publisher, error) {
-	topicArn, err := GetTopic(name, c...)
-	if err != nil {
-		return nil, err
-	}
-
+func NewPublisher(arn string, c ...Creds) (zpubsub.Publisher, error) {
 	region := os.Getenv("AWS_REGION")
 	key := os.Getenv("AWS_ACCESS_KEY_ID")
 	secret := os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -135,7 +130,7 @@ func NewPublisher(name string, c ...Creds) (zpubsub.Publisher, error) {
 			AccessKey: key,
 			SecretKey: secret,
 		},
-		Topic: *topicArn,
+		Topic: arn,
 	}
 
 	return awszpubsub.NewPublisher(cnf)
@@ -238,7 +233,7 @@ func SubscribeToTopic(name, topicArn string, c ...Creds) error {
 	return err
 }
 
-func NewSubscriber(name string, c ...Creds) (zpubsub.Subscriber, error) {
+func NewSubscriber(name, topicArn string, c ...Creds) (zpubsub.Subscriber, error) {
 	acct, err := getAcctId(c...)
 	if err != nil {
 		return nil, err
@@ -249,6 +244,11 @@ func NewSubscriber(name string, c ...Creds) (zpubsub.Subscriber, error) {
 		if c[0].Region != "" {
 			region = c[0].Region
 		}
+	}
+
+	err = SubscribeToTopic(name, topicArn, c...)
+	if err != nil {
+		return nil, err
 	}
 
 	return awszpubsub.NewSubscriber(awszpubsub.SQSConfig{

@@ -4,18 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync/atomic"
+	"time"
 
-	zpubsub "github.com/NYTimes/gizmo/pubsub"
 	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
-)
-
-const (
-	masterTimeout = 30 // seconds
-	keyTTL        = 29 // seconds
-
-	cmdReportWorkerName = "CMD_REPORT_WORKER_NAME"
-	cmdStartWork        = "CMD_START_WORK"
+	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -47,22 +42,21 @@ type withDistLocker struct{ dl DistLocker }
 func (w withDistLocker) Apply(o *kettle)       { o.lock = w.dl }
 func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
-type withPublisher struct{ pub zpubsub.MultiPublisher }
+type withTickTime int64
 
-func (w withPublisher) Apply(o *kettle)                   { o.pub = w.pub }
-func WithPublisher(v zpubsub.MultiPublisher) KettleOption { return withPublisher{v} }
-
-type withSubscriber struct{ sub zpubsub.Subscriber }
-
-func (w withSubscriber) Apply(o *kettle)               { o.sub = w.sub }
-func WithSubscriber(v zpubsub.Subscriber) KettleOption { return withSubscriber{v} }
+func (w withTickTime) Apply(o *kettle)  { o.tickTime = int64(w) }
+func WithTickTime(v int64) KettleOption { return withTickTime(v) }
 
 type kettle struct {
-	name    string
-	verbose bool
-	lock    DistLocker
-	pub     zpubsub.Publisher
-	sub     zpubsub.Subscriber
+	name       string
+	verbose    bool
+	lock       DistLocker
+	master     int32 // 1 if we are master, otherwise, 0
+	hostname   string
+	startInput *StartInput // copy of StartInput
+	masterQuit chan error  // signal master set to quit
+	masterDone chan error  // master termination done
+	tickTime   int64
 }
 
 func (s kettle) Name() string    { return s.name }
@@ -114,9 +108,96 @@ func (s kettle) fatalf(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
+func (s kettle) isMaster() bool {
+	if atomic.LoadInt32(&s.master) == 1 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (s *kettle) setMaster() {
+	if err := s.lock.Lock(); err != nil {
+		s.infof("[%v] %v set to worker", s.name, s.hostname)
+		atomic.StoreInt32(&s.master, 0)
+		return
+	}
+
+	s.infof("[%v] %v set to master", s.name, s.hostname)
+	atomic.StoreInt32(&s.master, 1)
+}
+
+func (s *kettle) doMaster() {
+	masterTicker := time.NewTicker(time.Second * time.Duration(30))
+
+	fnDoWork := func() {
+		// Attempt to be master here.
+		s.setMaster()
+
+		// Only if we are master.
+		if s.isMaster() {
+			if s.startInput.Master != nil {
+				s.startInput.Master(s.startInput.MasterCtx)
+			}
+		}
+	}
+
+	fnDoWork() // first invoke before tick
+
+	go func() {
+		for {
+			select {
+			case <-masterTicker.C:
+				fnDoWork() // succeeding ticks
+			case <-s.masterQuit:
+				s.masterDone <- nil
+				return
+			}
+		}
+	}()
+}
+
+type StartInput struct {
+	Master    func(ctx interface{}) error
+	MasterCtx interface{}
+	Quit      chan error
+	Done      chan error
+}
+
+func (s *kettle) Start(in *StartInput) error {
+	if in == nil {
+		return errors.Errorf("input cannot be nil")
+	}
+
+	s.startInput = in
+	hostname, _ := os.Hostname()
+	hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
+	s.hostname = hostname
+
+	s.masterQuit = make(chan error, 1)
+	s.masterDone = make(chan error, 1)
+
+	go func() {
+		<-in.Quit
+		s.infof("[%v] requested to terminate", s.name)
+
+		// Attempt to gracefully terminate master.
+		s.masterQuit <- nil
+		<-s.masterDone
+
+		s.infof("[%v] terminate complete", s.name)
+		in.Done <- nil
+	}()
+
+	go s.doMaster()
+
+	return nil
+}
+
 func New(opts ...KettleOption) (*kettle, error) {
 	s := &kettle{
-		name: "kettle",
+		name:     "kettle",
+		tickTime: 30,
 	}
 
 	for _, opt := range opts {
@@ -131,16 +212,7 @@ func New(opts ...KettleOption) (*kettle, error) {
 
 		pools := []redsync.Pool{pool}
 		rs := redsync.New(pools)
-		s.lock = rs.NewMutex(fmt.Sprintf("%v-distlocker", s.name))
-	}
-
-	if s.pub == nil {
-		pub, err := NewPublisher(fmt.Sprintf("%v-snspublisher", s.name))
-		if err != nil {
-			return nil, err
-		}
-
-		s.pub = pub
+		s.lock = rs.NewMutex(fmt.Sprintf("%v-distlocker", s.name), redsync.SetExpiry(time.Second*time.Duration(s.tickTime)))
 	}
 
 	return s, nil
