@@ -1,7 +1,6 @@
 package kettle
 
 import (
-	"log"
 	"os"
 
 	awszconf "github.com/NYTimes/gizmo/config/aws"
@@ -86,6 +85,5 @@ func NewPublisher(name string, c ...Creds) (zpubsub.Publisher, error) {
 		Topic: *topicArn,
 	}
 
-	log.Println(*topicArn)
 	return awszpubsub.NewPublisher(cnf)
 }
