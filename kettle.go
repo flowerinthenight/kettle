@@ -128,7 +128,7 @@ func (s *kettle) setMaster() {
 }
 
 func (s *kettle) doMaster() {
-	masterTicker := time.NewTicker(time.Second * time.Duration(30))
+	masterTicker := time.NewTicker(time.Second * time.Duration(s.tickTime))
 
 	fnDoWork := func() {
 		// Attempt to be master here.
