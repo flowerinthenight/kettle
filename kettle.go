@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
+	zpubsub "github.com/NYTimes/gizmo/pubsub"
 	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -47,10 +47,22 @@ type withDistLocker struct{ dl DistLocker }
 func (w withDistLocker) Apply(o *kettle)       { o.lock = w.dl }
 func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
+type withPublisher struct{ pub zpubsub.MultiPublisher }
+
+func (w withPublisher) Apply(o *kettle)                   { o.pub = w.pub }
+func WithPublisher(v zpubsub.MultiPublisher) KettleOption { return withPublisher{v} }
+
+type withSubscriber struct{ sub zpubsub.Subscriber }
+
+func (w withSubscriber) Apply(o *kettle)               { o.sub = w.sub }
+func WithSubscriber(v zpubsub.Subscriber) KettleOption { return withSubscriber{v} }
+
 type kettle struct {
 	name    string
 	verbose bool
 	lock    DistLocker
+	pub     zpubsub.Publisher
+	sub     zpubsub.Subscriber
 }
 
 func (s kettle) Name() string    { return s.name }
@@ -104,7 +116,7 @@ func (s kettle) fatalf(format string, v ...interface{}) {
 
 func New(opts ...KettleOption) (*kettle, error) {
 	s := &kettle{
-		name: fmt.Sprintf("%s", uuid.NewV4()),
+		name: "kettle",
 	}
 
 	for _, opt := range opts {
@@ -119,7 +131,16 @@ func New(opts ...KettleOption) (*kettle, error) {
 
 		pools := []redsync.Pool{pool}
 		rs := redsync.New(pools)
-		s.lock = rs.NewMutex(fmt.Sprintf("%v-kettlelocker", s.name))
+		s.lock = rs.NewMutex(fmt.Sprintf("%v-distlocker", s.name))
+	}
+
+	if s.pub == nil {
+		pub, err := NewPublisher(fmt.Sprintf("%v-snspublisher", s.name))
+		if err != nil {
+			return nil, err
+		}
+
+		s.pub = pub
 	}
 
 	return s, nil
