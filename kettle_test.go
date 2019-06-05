@@ -6,7 +6,7 @@ import (
 )
 
 func TestGen(t *testing.T) {
-	s, err := New(nil, withVerbose(true))
+	s, err := New(withVerbose(true))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/fatih/color"
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redsync/redsync"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -27,38 +25,38 @@ var (
 
 type DistLocker interface {
 	Lock() error
-	Unlock() error
+	Unlock() bool
 }
 
-type ShareOption interface {
-	Apply(*share)
+type KettleOption interface {
+	Apply(*kettle)
 }
 
 type withName string
 
-func (w withName) Apply(o *share)   { o.name = string(w) }
-func WithName(v string) ShareOption { return withName(v) }
+func (w withName) Apply(o *kettle)   { o.name = string(w) }
+func WithName(v string) KettleOption { return withName(v) }
 
 type withVerbose bool
 
-func (w withVerbose) Apply(o *share) { o.verbose = bool(w) }
-func WithVerbose(v bool) ShareOption { return withVerbose(v) }
+func (w withVerbose) Apply(o *kettle) { o.verbose = bool(w) }
+func WithVerbose(v bool) KettleOption { return withVerbose(v) }
 
 type withDistLocker struct{ dl DistLocker }
 
-func (w withDistLocker) Apply(o *share)       { o.distlock = w.dl }
-func WithDistLocker(v DistLocker) ShareOption { return withDistLocker{v} }
+func (w withDistLocker) Apply(o *kettle)       { o.lock = w.dl }
+func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
-type share struct {
-	name     string
-	verbose  bool
-	distlock DistLocker
+type kettle struct {
+	name    string
+	verbose bool
+	lock    DistLocker
 }
 
-func (s share) Name() string    { return s.name }
-func (s share) IsVerbose() bool { return s.verbose }
+func (s kettle) Name() string    { return s.name }
+func (s kettle) IsVerbose() bool { return s.verbose }
 
-func (s share) info(v ...interface{}) {
+func (s kettle) info(v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -67,7 +65,7 @@ func (s share) info(v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s share) infof(format string, v ...interface{}) {
+func (s kettle) infof(format string, v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -76,7 +74,7 @@ func (s share) infof(format string, v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s share) error(v ...interface{}) {
+func (s kettle) error(v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -85,7 +83,7 @@ func (s share) error(v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s share) errorf(format string, v ...interface{}) {
+func (s kettle) errorf(format string, v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -94,49 +92,18 @@ func (s share) errorf(format string, v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s share) fatal(v ...interface{}) {
+func (s kettle) fatal(v ...interface{}) {
 	s.error(v...)
 	os.Exit(1)
 }
 
-func (s share) fatalf(format string, v ...interface{}) {
+func (s kettle) fatalf(format string, v ...interface{}) {
 	s.errorf(format, v...)
 	os.Exit(1)
 }
 
-func (s share) InitRedisPool() *redis.Pool {
-	addr := os.Getenv("REDIS_HOST")
-	if addr == "" {
-		s.fatal("REDIS_HOST env variable must be set (e.g host:port, redis://password@host:port)")
-	}
-
-	var dialOpts []redis.DialOption
-	password := os.Getenv("REDIS_PASSWORD")
-	if password != "" {
-		dialOpts = append(dialOpts, redis.DialPassword(password))
-	}
-
-	timeoutEnv := os.Getenv("REDIS_TIMEOUT_SECONDS")
-	if timeoutEnv != "" {
-		timeoutSecs, timeoutParseErr := strconv.Atoi(timeoutEnv)
-		if timeoutParseErr != nil {
-			s.error("warning, REDIS_TIMEOUT_SECONDS must be a number")
-		} else {
-			dialOpts = append(dialOpts, redis.DialConnectTimeout(time.Duration(timeoutSecs)*time.Second))
-		}
-	}
-
-	return &redis.Pool{
-		MaxIdle:     3,
-		MaxActive:   4,
-		Wait:        true,
-		IdleTimeout: 240 * time.Second,
-		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr, dialOpts...) },
-	}
-}
-
-func New(dl DistLocker, opts ...ShareOption) (*share, error) {
-	s := &share{
+func New(opts ...KettleOption) (*kettle, error) {
+	s := &kettle{
 		name: fmt.Sprintf("%s", uuid.NewV4()),
 	}
 
@@ -144,10 +111,16 @@ func New(dl DistLocker, opts ...ShareOption) (*share, error) {
 		opt.Apply(s)
 	}
 
-	pool := s.InitRedisPool()
-	con := pool.Get()
-	s.info(con)
-	defer con.Close()
+	if s.lock == nil {
+		pool, err := NewRedisPool()
+		if err != nil {
+			return nil, err
+		}
+
+		pools := []redsync.Pool{pool}
+		rs := redsync.New(pools)
+		s.lock = rs.NewMutex(fmt.Sprintf("%v-kettlelocker", s.name))
+	}
 
 	return s, nil
 }

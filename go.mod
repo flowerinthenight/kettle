@@ -8,5 +8,6 @@ require (
 	github.com/go-redsync/redsync v1.2.0
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/satori/go.uuid v1.2.0
 )
