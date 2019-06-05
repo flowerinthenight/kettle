@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
+	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
@@ -50,6 +51,7 @@ func WithTickTime(v int64) KettleOption { return withTickTime(v) }
 type kettle struct {
 	name       string
 	verbose    bool
+	pool       *redis.Pool
 	lock       DistLocker
 	master     int32 // 1 if we are master, otherwise, 0
 	hostname   string
@@ -59,8 +61,9 @@ type kettle struct {
 	tickTime   int64
 }
 
-func (s kettle) Name() string    { return s.name }
-func (s kettle) IsVerbose() bool { return s.verbose }
+func (s kettle) Name() string      { return s.name }
+func (s kettle) IsVerbose() bool   { return s.verbose }
+func (s kettle) Pool() *redis.Pool { return s.pool }
 
 func (s kettle) info(v ...interface{}) {
 	if !s.verbose {
@@ -210,6 +213,7 @@ func New(opts ...KettleOption) (*kettle, error) {
 			return nil, err
 		}
 
+		s.pool = pool
 		pools := []redsync.Pool{pool}
 		rs := redsync.New(pools)
 		s.lock = rs.NewMutex(fmt.Sprintf("%v-distlocker", s.name), redsync.SetExpiry(time.Second*time.Duration(s.tickTime)))
