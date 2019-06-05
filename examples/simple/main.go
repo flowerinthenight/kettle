@@ -14,6 +14,7 @@ func doMaster(v interface{}) error {
 }
 
 func main() {
+	// Setup what to do when we are master.
 	s, err := kettle.New(kettle.WithVerbose(true))
 	if err != nil {
 		log.Fatal(err)
@@ -30,6 +31,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Proceed with normal worker job.
+	go func() {
+		for {
+			log.Println("i am doing worker job here")
+			time.Sleep(time.Second * 2)
+		}
+	}()
 
 	time.Sleep(time.Second * 40)
 	in.Quit <- nil // terminate
