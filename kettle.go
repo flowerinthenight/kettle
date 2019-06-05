@@ -133,7 +133,7 @@ func (s *kettle) setMaster() {
 func (s *kettle) doMaster() {
 	masterTicker := time.NewTicker(time.Second * time.Duration(s.tickTime))
 
-	fnDoWork := func() {
+	work := func() {
 		// Attempt to be master here.
 		s.setMaster()
 
@@ -145,13 +145,13 @@ func (s *kettle) doMaster() {
 		}
 	}
 
-	fnDoWork() // first invoke before tick
+	work() // first invoke before tick
 
 	go func() {
 		for {
 			select {
 			case <-masterTicker.C:
-				fnDoWork() // succeeding ticks
+				work() // succeeding ticks
 			case <-s.masterQuit:
 				s.masterDone <- nil
 				return
@@ -161,10 +161,10 @@ func (s *kettle) doMaster() {
 }
 
 type StartInput struct {
-	Master    func(ctx interface{}) error
-	MasterCtx interface{}
-	Quit      chan error
-	Done      chan error
+	Master    func(ctx interface{}) error // function to call every time we are master
+	MasterCtx interface{}                 // callback function parameter
+	Quit      chan error                  // signal for us to terminate
+	Done      chan error                  // report that we are done
 }
 
 func (s *kettle) Start(in *StartInput) error {
