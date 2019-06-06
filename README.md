@@ -32,3 +32,6 @@ All workers that share the same name will attempt to grab a Redis lock to become
   in.Quit <- nil // terminate
   <-in.Done      // wait
 ```
+
+# Example
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/tree/master/examples/simple) for reference.
