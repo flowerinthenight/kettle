@@ -13,7 +13,7 @@ type app struct {
 
 func (w *app) DoMaster(v interface{}) error {
 	k := v.(*kettle.Kettle)
-	log.Printf("[%v] hello from master", k.Name())
+	log.Printf("[%v] HELLO FROM MASTER", k.Name())
 	return nil
 }
 
@@ -50,7 +50,7 @@ func main() {
 	// Proceed with normal worker job.
 	go func() {
 		for {
-			log.Printf("[%v] i am doing worker job here", name)
+			log.Printf("[%v] hello from worker", name)
 			time.Sleep(time.Second * 2)
 		}
 	}()
