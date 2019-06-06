@@ -1,2 +1,1 @@
-# Overview
-Simple library to share workloads to a group of workers.
+You can run the example simultaneously using multiple machines.
