@@ -34,4 +34,4 @@ All workers that share the same name will attempt to grab a Redis lock to become
 ```
 
 # Example
-A simple example is provided [here](https://github.com/flowerinthenight/kettle/tree/master/examples/simple) for reference.
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference.
