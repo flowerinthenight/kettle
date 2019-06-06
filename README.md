@@ -44,4 +44,4 @@ REDIS_TIMEOUT_SECONDS=5
 ```
 
 # Example
-A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference.
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference. Try running it simultaneously on multiple nodes.
