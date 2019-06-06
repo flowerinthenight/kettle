@@ -11,4 +11,4 @@ jobs:
         shell: /bin/bash
         command: |
           cd examples/simple/
-          GO111MODULE=on GOFLAGS=-mod=vendor go build -v
+          GO111MODULE=on go build -v
