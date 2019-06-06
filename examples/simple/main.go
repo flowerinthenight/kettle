@@ -4,32 +4,28 @@ import (
 	"log"
 	"time"
 
-	"github.com/dchest/uniuri"
 	"github.com/flowerinthenight/kettle"
 )
 
-type work struct {
+type app struct {
 	Value int32
 }
 
-func (w *work) DoMaster(v interface{}) error {
+func (w *app) DoMaster(v interface{}) error {
 	k := v.(*kettle.Kettle)
 	log.Printf("[%v] hello from master", k.Name())
 	return nil
 }
 
-func (w *work) DoWork() error {
+func (w *app) DoWork() error {
 	return nil
 }
 
 func main() {
-	// Our worker object abstraction.
-	w := &work{
-		Value: 1, // this will be incremented every time master runs
-	}
+	// Our app object abstraction.
+	w := &app{}
 
-	name := uniuri.NewLen(10)
-	// Setup kettle for master work.
+	name := "kettle-example"
 	k, err := kettle.New(
 		kettle.WithName(name),
 		kettle.WithVerbose(true),

@@ -61,9 +61,9 @@ type Kettle struct {
 	tickTime   int64
 }
 
-func (s kettle) Name() string      { return s.name }
-func (s kettle) IsVerbose() bool   { return s.verbose }
-func (s kettle) Pool() *redis.Pool { return s.pool }
+func (s Kettle) Name() string      { return s.name }
+func (s Kettle) IsVerbose() bool   { return s.verbose }
+func (s Kettle) Pool() *redis.Pool { return s.pool }
 
 func (s Kettle) info(v ...interface{}) {
 	if !s.verbose {
@@ -130,7 +130,7 @@ func (s *Kettle) setMaster() {
 	atomic.StoreInt32(&s.master, 1)
 }
 
-func (s *kettle) doMaster() {
+func (s *Kettle) doMaster() {
 	masterTicker := time.NewTicker(time.Second * time.Duration(s.tickTime))
 
 	work := func() {
