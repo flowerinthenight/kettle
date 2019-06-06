@@ -49,4 +49,4 @@ REDIS_TIMEOUT_SECONDS=5
 A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference. Try running it simultaneously on multiple nodes.
 
 ## Notes
-Check this [blog post](https://flowerinthenight.com/blog/2019/06/05/master-election-using-kettle) for information on how this library is used in production.
+Check this [blog post](https://flowerinthenight.com/blog/2019/06/05/master-election-using-kettle) out for information on how this library is used in production.
