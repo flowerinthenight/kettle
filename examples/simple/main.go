@@ -7,23 +7,26 @@ import (
 	"github.com/flowerinthenight/kettle"
 )
 
-type app struct{}
+type app struct {
+	Name string
+}
 
-func (w *app) DoMaster(v interface{}) error {
+func (a *app) DoMaster(v interface{}) error {
 	k := v.(*kettle.Kettle)
 	log.Printf("[%v] HELLO FROM MASTER", k.Name())
 	return nil
 }
 
-func (w *app) DoWork() error {
+func (a app) DoWork() error {
+	log.Printf("[%v] hello from worker", a.Name)
 	return nil
 }
 
 func main() {
 	// Our app object abstraction.
-	w := &app{}
-
 	name := "kettle-example"
+	a := &app{name}
+
 	k, err := kettle.New(
 		kettle.WithName(name),
 		kettle.WithVerbose(true),
@@ -34,7 +37,7 @@ func main() {
 	}
 
 	in := kettle.StartInput{
-		Master:    w.DoMaster,       // called when we are master
+		Master:    a.DoMaster,       // called when we are master
 		MasterCtx: k,                // context value that is passed to `Master` as parameter
 		Quit:      make(chan error), // tell kettle to exit
 		Done:      make(chan error), // kettle is done
@@ -48,7 +51,7 @@ func main() {
 	// Proceed with normal worker job.
 	go func() {
 		for {
-			log.Printf("[%v] hello from worker", name)
+			a.DoWork()
 			time.Sleep(time.Second * 2)
 		}
 	}()
