@@ -25,30 +25,30 @@ type DistLocker interface {
 }
 
 type KettleOption interface {
-	Apply(*kettle)
+	Apply(*Kettle)
 }
 
 type withName string
 
-func (w withName) Apply(o *kettle)   { o.name = string(w) }
+func (w withName) Apply(o *Kettle)   { o.name = string(w) }
 func WithName(v string) KettleOption { return withName(v) }
 
 type withVerbose bool
 
-func (w withVerbose) Apply(o *kettle) { o.verbose = bool(w) }
+func (w withVerbose) Apply(o *Kettle) { o.verbose = bool(w) }
 func WithVerbose(v bool) KettleOption { return withVerbose(v) }
 
 type withDistLocker struct{ dl DistLocker }
 
-func (w withDistLocker) Apply(o *kettle)       { o.lock = w.dl }
+func (w withDistLocker) Apply(o *Kettle)       { o.lock = w.dl }
 func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
 type withTickTime int64
 
-func (w withTickTime) Apply(o *kettle)  { o.tickTime = int64(w) }
+func (w withTickTime) Apply(o *Kettle)  { o.tickTime = int64(w) }
 func WithTickTime(v int64) KettleOption { return withTickTime(v) }
 
-type kettle struct {
+type Kettle struct {
 	name       string
 	verbose    bool
 	pool       *redis.Pool
@@ -65,7 +65,7 @@ func (s kettle) Name() string      { return s.name }
 func (s kettle) IsVerbose() bool   { return s.verbose }
 func (s kettle) Pool() *redis.Pool { return s.pool }
 
-func (s kettle) info(v ...interface{}) {
+func (s Kettle) info(v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -74,7 +74,7 @@ func (s kettle) info(v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s kettle) infof(format string, v ...interface{}) {
+func (s Kettle) infof(format string, v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -83,7 +83,7 @@ func (s kettle) infof(format string, v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s kettle) error(v ...interface{}) {
+func (s Kettle) error(v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -92,7 +92,7 @@ func (s kettle) error(v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s kettle) errorf(format string, v ...interface{}) {
+func (s Kettle) errorf(format string, v ...interface{}) {
 	if !s.verbose {
 		return
 	}
@@ -101,17 +101,17 @@ func (s kettle) errorf(format string, v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s kettle) fatal(v ...interface{}) {
+func (s Kettle) fatal(v ...interface{}) {
 	s.error(v...)
 	os.Exit(1)
 }
 
-func (s kettle) fatalf(format string, v ...interface{}) {
+func (s Kettle) fatalf(format string, v ...interface{}) {
 	s.errorf(format, v...)
 	os.Exit(1)
 }
 
-func (s kettle) isMaster() bool {
+func (s Kettle) isMaster() bool {
 	if atomic.LoadInt32(&s.master) == 1 {
 		return true
 	} else {
@@ -119,7 +119,7 @@ func (s kettle) isMaster() bool {
 	}
 }
 
-func (s *kettle) setMaster() {
+func (s *Kettle) setMaster() {
 	if err := s.lock.Lock(); err != nil {
 		s.infof("[%v] %v set to worker", s.name, s.hostname)
 		atomic.StoreInt32(&s.master, 0)
@@ -167,7 +167,7 @@ type StartInput struct {
 	Done      chan error                  // report that we are done
 }
 
-func (s *kettle) Start(in *StartInput) error {
+func (s *Kettle) Start(in *StartInput) error {
 	if in == nil {
 		return errors.Errorf("input cannot be nil")
 	}
@@ -197,8 +197,8 @@ func (s *kettle) Start(in *StartInput) error {
 	return nil
 }
 
-func New(opts ...KettleOption) (*kettle, error) {
-	s := &kettle{
+func New(opts ...KettleOption) (*Kettle, error) {
+	s := &Kettle{
 		name:     "kettle",
 		tickTime: 30,
 	}
