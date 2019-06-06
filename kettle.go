@@ -19,7 +19,7 @@ var (
 	green = color.New(color.FgGreen).SprintFunc()
 )
 
-// DistLocker abstracts distributed locker.
+// DistLocker abstracts a distributed locker.
 type DistLocker interface {
 	Lock() error
 	Unlock() bool
