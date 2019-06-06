@@ -11,7 +11,7 @@ All workers that share the same name will attempt to grab a Redis lock to become
     kettle.WithVerbose(true),
   )
   
-  in := StartInput{
+  in := kettle.StartInput{
     // Our master callback function.
     Master: func(v interface{}) error {
       kt := v.(*Kettle)
