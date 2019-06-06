@@ -1,7 +1,7 @@
-# Overview
+## Overview
 `kettle` is a simple library that abstracts the use of distributed locking to elect a master among group of workers at a specified time interval. The elected master will then call the "master" function. This library uses [Redis](https://redis.io/) as the default [distributed locker](https://redis.io/topics/distlock).
 
-# How it works
+## How it works
 All workers that share the same name will attempt to grab a Redis lock to become the master. A provided master function will be executed by the node that successfully grabbed the lock. A single node works as well, in which case, that node will run both as master and a worker.
 
 ```go
@@ -33,7 +33,7 @@ in.Quit <- nil // terminate
 <-in.Done      // wait
 ```
 
-# Environment variables
+## Environment variables
 ```bash
 # Required
 REDIS_HOST=1.2.3.4:6379
@@ -43,5 +43,5 @@ REDIS_PASSWORD=***
 REDIS_TIMEOUT_SECONDS=5
 ```
 
-# Example
+## Example
 A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference. Try running it simultaneously on multiple nodes.
