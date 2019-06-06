@@ -7,9 +7,7 @@ import (
 	"github.com/flowerinthenight/kettle"
 )
 
-type app struct {
-	Value int32
-}
+type app struct{}
 
 func (w *app) DoMaster(v interface{}) error {
 	k := v.(*kettle.Kettle)
