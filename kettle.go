@@ -154,7 +154,7 @@ func (k *Kettle) setMaster() {
 func (k *Kettle) doMaster() {
 	masterTicker := time.NewTicker(time.Second * time.Duration(k.tickTime))
 
-	work := func() {
+	f := func() {
 		// Attempt to be master here.
 		k.setMaster()
 
@@ -166,13 +166,13 @@ func (k *Kettle) doMaster() {
 		}
 	}
 
-	work() // first invoke before tick
+	f() // first invoke before tick
 
 	go func() {
 		for {
 			select {
 			case <-masterTicker.C:
-				work() // succeeding ticks
+				f() // succeeding ticks
 			case <-k.masterQuit:
 				k.masterDone <- nil
 				return
