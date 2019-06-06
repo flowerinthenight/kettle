@@ -19,35 +19,47 @@ var (
 	green = color.New(color.FgGreen).SprintFunc()
 )
 
+// DistLocker abstracts distributed locker.
 type DistLocker interface {
 	Lock() error
 	Unlock() bool
 }
 
+// KettleOption configures Kettle.
 type KettleOption interface {
 	Apply(*Kettle)
 }
 
 type withName string
 
-func (w withName) Apply(o *Kettle)   { o.name = string(w) }
+func (w withName) Apply(o *Kettle) { o.name = string(w) }
+
+// WithName configures Kettle instance's name.
 func WithName(v string) KettleOption { return withName(v) }
 
 type withVerbose bool
 
 func (w withVerbose) Apply(o *Kettle) { o.verbose = bool(w) }
+
+// WithVerbose configures a Kettle instance's log verbosity.
 func WithVerbose(v bool) KettleOption { return withVerbose(v) }
 
 type withDistLocker struct{ dl DistLocker }
 
-func (w withDistLocker) Apply(o *Kettle)       { o.lock = w.dl }
+func (w withDistLocker) Apply(o *Kettle) { o.lock = w.dl }
+
+// WithDistLocker configures a Kettle instance's DistLocker.
 func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
 type withTickTime int64
 
-func (w withTickTime) Apply(o *Kettle)  { o.tickTime = int64(w) }
+func (w withTickTime) Apply(o *Kettle) { o.tickTime = int64(w) }
+
+// WithTickTime configures a Kettle instance's tick timer in seconds.
 func WithTickTime(v int64) KettleOption { return withTickTime(v) }
 
+// Kettle provides functions that abstract the master election of a group of workers
+// at a given interval time.
 type Kettle struct {
 	name       string
 	verbose    bool
@@ -61,8 +73,13 @@ type Kettle struct {
 	tickTime   int64
 }
 
-func (s Kettle) Name() string      { return s.name }
-func (s Kettle) IsVerbose() bool   { return s.verbose }
+// Name returns the instance's name.
+func (s Kettle) Name() string { return s.name }
+
+// IsVerbose returns the verbosity setting.
+func (s Kettle) IsVerbose() bool { return s.verbose }
+
+// Pool returns the configured Redis connection pool.
 func (s Kettle) Pool() *redis.Pool { return s.pool }
 
 func (s Kettle) info(v ...interface{}) {
@@ -160,6 +177,7 @@ func (s *Kettle) doMaster() {
 	}()
 }
 
+// StartInput configures the Start function.
 type StartInput struct {
 	Master    func(ctx interface{}) error // function to call every time we are master
 	MasterCtx interface{}                 // callback function parameter
@@ -167,6 +185,7 @@ type StartInput struct {
 	Done      chan error                  // report that we are done
 }
 
+// Start starts Kettle's main function.
 func (s *Kettle) Start(in *StartInput) error {
 	if in == nil {
 		return errors.Errorf("input cannot be nil")
@@ -197,6 +216,7 @@ func (s *Kettle) Start(in *StartInput) error {
 	return nil
 }
 
+// New returns an instance of Kettle.
 func New(opts ...KettleOption) (*Kettle, error) {
 	s := &Kettle{
 		name:     "kettle",
