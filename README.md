@@ -33,5 +33,15 @@ All workers that share the same name will attempt to grab a Redis lock to become
   <-in.Done      // wait
 ```
 
+# Environment variables
+```bash
+# Required
+REDIS_HOST=1.2.3.4:6379
+
+# Optional
+REDIS_PASSWORD=***
+REDIS_TIMEOUT_SECONDS=5
+```
+
 # Example
 A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference.
