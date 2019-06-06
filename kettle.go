@@ -78,16 +78,16 @@ type Kettle struct {
 }
 
 // Name returns the instance's name.
-func (s Kettle) Name() string { return s.name }
+func (k Kettle) Name() string { return k.name }
 
 // IsVerbose returns the verbosity setting.
-func (s Kettle) IsVerbose() bool { return s.verbose }
+func (k Kettle) IsVerbose() bool { return k.verbose }
 
 // Pool returns the configured Redis connection pool.
-func (s Kettle) Pool() *redis.Pool { return s.pool }
+func (k Kettle) Pool() *redis.Pool { return k.pool }
 
-func (s Kettle) info(v ...interface{}) {
-	if !s.verbose {
+func (k Kettle) info(v ...interface{}) {
+	if !k.verbose {
 		return
 	}
 
@@ -95,8 +95,8 @@ func (s Kettle) info(v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s Kettle) infof(format string, v ...interface{}) {
-	if !s.verbose {
+func (k Kettle) infof(format string, v ...interface{}) {
+	if !k.verbose {
 		return
 	}
 
@@ -104,8 +104,8 @@ func (s Kettle) infof(format string, v ...interface{}) {
 	log.Printf("%s %s", green("[info]"), m)
 }
 
-func (s Kettle) error(v ...interface{}) {
-	if !s.verbose {
+func (k Kettle) error(v ...interface{}) {
+	if !k.verbose {
 		return
 	}
 
@@ -113,8 +113,8 @@ func (s Kettle) error(v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s Kettle) errorf(format string, v ...interface{}) {
-	if !s.verbose {
+func (k Kettle) errorf(format string, v ...interface{}) {
+	if !k.verbose {
 		return
 	}
 
@@ -122,46 +122,46 @@ func (s Kettle) errorf(format string, v ...interface{}) {
 	log.Printf("%s %s", red("[error]"), m)
 }
 
-func (s Kettle) fatal(v ...interface{}) {
-	s.error(v...)
+func (k Kettle) fatal(v ...interface{}) {
+	k.error(v...)
 	os.Exit(1)
 }
 
-func (s Kettle) fatalf(format string, v ...interface{}) {
-	s.errorf(format, v...)
+func (k Kettle) fatalf(format string, v ...interface{}) {
+	k.errorf(format, v...)
 	os.Exit(1)
 }
 
-func (s Kettle) isMaster() bool {
-	if atomic.LoadInt32(&s.master) == 1 {
+func (k Kettle) isMaster() bool {
+	if atomic.LoadInt32(&k.master) == 1 {
 		return true
 	} else {
 		return false
 	}
 }
 
-func (s *Kettle) setMaster() {
-	if err := s.lock.Lock(); err != nil {
-		s.infof("[%v] %v set to worker", s.name, s.hostname)
-		atomic.StoreInt32(&s.master, 0)
+func (k *Kettle) setMaster() {
+	if err := k.lock.Lock(); err != nil {
+		k.infof("[%v] %v set to worker", k.name, k.hostname)
+		atomic.StoreInt32(&k.master, 0)
 		return
 	}
 
-	s.infof("[%v] %v set to master", s.name, s.hostname)
-	atomic.StoreInt32(&s.master, 1)
+	k.infof("[%v] %v set to master", k.name, k.hostname)
+	atomic.StoreInt32(&k.master, 1)
 }
 
-func (s *Kettle) doMaster() {
-	masterTicker := time.NewTicker(time.Second * time.Duration(s.tickTime))
+func (k *Kettle) doMaster() {
+	masterTicker := time.NewTicker(time.Second * time.Duration(k.tickTime))
 
 	work := func() {
 		// Attempt to be master here.
-		s.setMaster()
+		k.setMaster()
 
 		// Only if we are master.
-		if s.isMaster() {
-			if s.startInput.Master != nil {
-				s.startInput.Master(s.startInput.MasterCtx)
+		if k.isMaster() {
+			if k.startInput.Master != nil {
+				k.startInput.Master(k.startInput.MasterCtx)
 			}
 		}
 	}
@@ -173,8 +173,8 @@ func (s *Kettle) doMaster() {
 			select {
 			case <-masterTicker.C:
 				work() // succeeding ticks
-			case <-s.masterQuit:
-				s.masterDone <- nil
+			case <-k.masterQuit:
+				k.masterDone <- nil
 				return
 			}
 		}
@@ -190,61 +190,61 @@ type StartInput struct {
 }
 
 // Start starts Kettle's main function.
-func (s *Kettle) Start(in *StartInput) error {
+func (k *Kettle) Start(in *StartInput) error {
 	if in == nil {
 		return errors.Errorf("input cannot be nil")
 	}
 
-	s.startInput = in
+	k.startInput = in
 	hostname, _ := os.Hostname()
 	hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
-	s.hostname = hostname
+	k.hostname = hostname
 
-	s.masterQuit = make(chan error, 1)
-	s.masterDone = make(chan error, 1)
+	k.masterQuit = make(chan error, 1)
+	k.masterDone = make(chan error, 1)
 
 	go func() {
 		<-in.Quit
-		s.infof("[%v] requested to terminate", s.name)
+		k.infof("[%v] requested to terminate", k.name)
 
 		// Attempt to gracefully terminate master.
-		s.masterQuit <- nil
-		<-s.masterDone
+		k.masterQuit <- nil
+		<-k.masterDone
 
-		s.infof("[%v] terminate complete", s.name)
+		k.infof("[%v] terminate complete", k.name)
 		in.Done <- nil
 	}()
 
-	go s.doMaster()
+	go k.doMaster()
 
 	return nil
 }
 
 // New returns an instance of Kettle.
 func New(opts ...KettleOption) (*Kettle, error) {
-	s := &Kettle{
+	k := &Kettle{
 		name:     "kettle",
 		tickTime: 30,
 	}
 
 	for _, opt := range opts {
-		opt.Apply(s)
+		opt.Apply(k)
 	}
 
-	if s.lock == nil {
+	if k.lock == nil {
 		pool, err := NewRedisPool()
 		if err != nil {
 			return nil, err
 		}
 
-		s.pool = pool
+		k.pool = pool
 		pools := []redsync.Pool{pool}
 		rs := redsync.New(pools)
-		s.lock = rs.NewMutex(
-			fmt.Sprintf("%v-distlocker", s.name),
-			redsync.SetExpiry(time.Second*time.Duration(s.tickTime)),
+		k.lock = rs.NewMutex(
+			fmt.Sprintf("%v-distlocker", k.name),
+			redsync.SetExpiry(time.Second*time.Duration(k.tickTime)),
 		)
 	}
 
-	return s, nil
+	return k, nil
 }
