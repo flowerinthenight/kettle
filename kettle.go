@@ -32,6 +32,7 @@ type KettleOption interface {
 
 type withName string
 
+// Apply applies a name to a Kettle instance.
 func (w withName) Apply(o *Kettle) { o.name = string(w) }
 
 // WithName configures Kettle instance's name.
@@ -39,6 +40,7 @@ func WithName(v string) KettleOption { return withName(v) }
 
 type withVerbose bool
 
+// Apply applies a verbosity value to a Kettle instance.
 func (w withVerbose) Apply(o *Kettle) { o.verbose = bool(w) }
 
 // WithVerbose configures a Kettle instance's log verbosity.
@@ -46,6 +48,7 @@ func WithVerbose(v bool) KettleOption { return withVerbose(v) }
 
 type withDistLocker struct{ dl DistLocker }
 
+// Apply applies a distributed locker to a Kettle instance.
 func (w withDistLocker) Apply(o *Kettle) { o.lock = w.dl }
 
 // WithDistLocker configures a Kettle instance's DistLocker.
@@ -53,6 +56,7 @@ func WithDistLocker(v DistLocker) KettleOption { return withDistLocker{v} }
 
 type withTickTime int64
 
+// Apply applies a tick time interval value to a Kettle instance.
 func (w withTickTime) Apply(o *Kettle) { o.tickTime = int64(w) }
 
 // WithTickTime configures a Kettle instance's tick timer in seconds.
