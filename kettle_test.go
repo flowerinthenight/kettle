@@ -9,7 +9,7 @@ import (
 
 func TestGen(t *testing.T) {
 	if host := os.Getenv("REDIS_HOST"); host == "" {
-		log.Println("ho redis host:port")
+		log.Println("no redis host:port")
 		return
 	}
 
