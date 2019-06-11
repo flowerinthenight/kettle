@@ -8,6 +8,7 @@ import (
 )
 
 type app struct {
+	K    *kettle.Kettle
 	Name string
 }
 
@@ -18,14 +19,14 @@ func (a *app) DoMaster(v interface{}) error {
 }
 
 func (a app) DoWork() error {
-	log.Printf("[%v] hello from worker", a.Name)
+	log.Printf("[%v] hello from worker, master=%v", a.Name, a.K.IsMaster())
 	return nil
 }
 
 func main() {
 	// Our app object abstraction.
-	name := "kettle-example"
-	a := &app{name}
+	name := "kettle-simple-example"
+	a := &app{Name: name}
 
 	k, err := kettle.New(
 		kettle.WithName(name),
@@ -35,6 +36,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Store reference to kettle.
+	a.K = k
 
 	in := kettle.StartInput{
 		Master:    a.DoMaster,       // called when we are master

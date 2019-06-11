@@ -83,6 +83,9 @@ func (k Kettle) Name() string { return k.name }
 // IsVerbose returns the verbosity setting.
 func (k Kettle) IsVerbose() bool { return k.verbose }
 
+// IsMaster returns master status.
+func (k Kettle) IsMaster() bool { return k.isMaster() }
+
 // Pool returns the configured Redis connection pool.
 func (k Kettle) Pool() *redis.Pool { return k.pool }
 
@@ -142,7 +145,6 @@ func (k Kettle) isMaster() bool {
 
 func (k *Kettle) setMaster() {
 	if err := k.lock.Lock(); err != nil {
-		k.infof("[%v] %v set to worker", k.name, k.hostname)
 		atomic.StoreInt32(&k.master, 0)
 		return
 	}
