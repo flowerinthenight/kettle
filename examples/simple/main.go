@@ -52,15 +52,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Proceed with normal worker job.
-	go func() {
-		for {
-			a.DoWork()
-			time.Sleep(time.Second * 2)
-		}
-	}()
+	// Proceed with our usual (simulated) worker job.
+	for i := 0; i < 20; i++ {
+		a.DoWork()
+		time.Sleep(time.Second * 2)
+	}
 
-	time.Sleep(time.Second * 40)
 	in.Quit <- nil // terminate
 	<-in.Done      // wait
 }
