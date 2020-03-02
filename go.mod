@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/fatih/color v1.9.0
+	github.com/flowerinthenight/kettle/v2 v2.0.0-20200302023920-69987739cef2 // indirect
 	github.com/go-redsync/redsync v1.3.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/kr/text v0.2.0 // indirect
