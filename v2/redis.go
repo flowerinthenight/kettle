@@ -1,18 +1,18 @@
 package kettle
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/pkg/errors"
 )
 
 func NewRedisPool() (*redis.Pool, error) {
 	addr := os.Getenv("REDIS_HOST")
 	if addr == "" {
-		return nil, errors.Errorf("REDIS_HOST env variable must be set (e.g host:port, redis://password@host:port)")
+		return nil, fmt.Errorf("REDIS_HOST not set (host:port)")
 	}
 
 	var dialOpts []redis.DialOption
@@ -25,7 +25,7 @@ func NewRedisPool() (*redis.Pool, error) {
 	if tm != "" {
 		tmsec, err := strconv.Atoi(tm)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("REDIS_TIMEOUT_SECONDS convert failed: %w", err)
 		} else {
 			dialOpts = append(dialOpts, redis.DialConnectTimeout(time.Duration(tmsec)*time.Second))
 		}

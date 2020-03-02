@@ -1,6 +1,7 @@
 package kettle
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
 	"github.com/gomodule/redigo/redis"
-	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -187,14 +187,13 @@ func (k *Kettle) doMaster() {
 type StartInput struct {
 	Master    func(ctx interface{}) error // function to call every time we are master
 	MasterCtx interface{}                 // callback function parameter
-	Quit      chan error                  // signal for us to terminate
-	Done      chan error                  // report that we are done
 }
 
-// Start starts Kettle's main function.
-func (k *Kettle) Start(in *StartInput) error {
+// Start starts Kettle's main function. The ctx parameter is mainly used for termination
+// with an optional done channel for us to notify when we are done, if any.
+func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) error {
 	if in == nil {
-		return errors.Errorf("input cannot be nil")
+		return fmt.Errorf("input cannot be nil")
 	}
 
 	k.startInput = in
@@ -206,7 +205,7 @@ func (k *Kettle) Start(in *StartInput) error {
 	k.masterDone = make(chan error, 1)
 
 	go func() {
-		<-in.Quit
+		<-ctx.Done()
 		k.infof("[%v] requested to terminate", k.name)
 
 		// Attempt to gracefully terminate master.
@@ -214,7 +213,9 @@ func (k *Kettle) Start(in *StartInput) error {
 		<-k.masterDone
 
 		k.infof("[%v] terminate complete", k.name)
-		in.Done <- nil
+		if len(done) > 0 {
+			done[0] <- nil
+		}
 	}()
 
 	go k.doMaster()
@@ -236,7 +237,7 @@ func New(opts ...KettleOption) (*Kettle, error) {
 	if k.lock == nil {
 		pool, err := NewRedisPool()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("NewRedisPool failed: %w", err)
 		}
 
 		k.pool = pool

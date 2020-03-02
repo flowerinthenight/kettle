@@ -1,6 +1,7 @@
 package kettle
 
 import (
+	"context"
 	"log"
 	"os"
 	"testing"
@@ -18,6 +19,8 @@ func TestGen(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.TODO())
+	done := make(chan error, 1)
 	in := StartInput{
 		Master: func(v interface{}) error {
 			kt := v.(*Kettle)
@@ -25,16 +28,14 @@ func TestGen(t *testing.T) {
 			return nil
 		},
 		MasterCtx: k,
-		Quit:      make(chan error),
-		Done:      make(chan error),
 	}
 
-	err = k.Start(&in)
+	err = k.Start(ctx, &in, done)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	time.Sleep(time.Second * 5)
-	in.Quit <- nil // terminate
-	<-in.Done      // wait
+	cancel() // terminate
+	<-done   // wait
 }
