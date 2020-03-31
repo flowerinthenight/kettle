@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/golang:1.14
+    - image: circleci/golang:1.14.1
     working_directory: /go/src/github.com/flowerinthenight/kettle/
     steps:
     - checkout
@@ -11,4 +11,4 @@ jobs:
         shell: /bin/bash
         command: |
           cd examples/simple/
-          GO111MODULE=on go build -v
+          go build -v

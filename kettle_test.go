@@ -1,7 +1,6 @@
 package kettle
 
 import (
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -9,11 +8,11 @@ import (
 
 func TestGen(t *testing.T) {
 	if host := os.Getenv("REDIS_HOST"); host == "" {
-		log.Println("no redis host:port")
+		t.Log("no redis host:port")
 		return
 	}
 
-	k, err := New(withVerbose(true))
+	k, err := New(WithName("kettle_v0"), WithVerbose(true), WithTickTime(5))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,12 +20,12 @@ func TestGen(t *testing.T) {
 	in := StartInput{
 		Master: func(v interface{}) error {
 			kt := v.(*Kettle)
-			log.Println("from master, name:", kt.Name())
+			t.Log("from master, name:", kt.Name())
 			return nil
 		},
 		MasterCtx: k,
-		Quit:      make(chan error),
-		Done:      make(chan error),
+		Quit:      make(chan error, 1),
+		Done:      make(chan error, 1),
 	}
 
 	err = k.Start(&in)
@@ -34,7 +33,7 @@ func TestGen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 3)
 	in.Quit <- nil // terminate
 	<-in.Done      // wait
 }

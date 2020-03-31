@@ -22,7 +22,7 @@ var (
 // DistLocker abstracts a distributed locker.
 type DistLocker interface {
 	Lock() error
-	Unlock() bool
+	Unlock() (bool, error)
 }
 
 // KettleOption configures Kettle.
