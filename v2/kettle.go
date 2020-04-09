@@ -206,13 +206,8 @@ func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) 
 
 	go func() {
 		<-ctx.Done()
-		k.infof("[%v] requested to terminate", k.name)
-
-		// Attempt to gracefully terminate master.
 		k.masterQuit <- nil
 		<-k.masterDone
-
-		k.infof("[%v] terminate complete", k.name)
 		if len(done) > 0 {
 			done[0] <- nil
 		}
@@ -225,11 +220,7 @@ func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) 
 
 // New returns an instance of Kettle.
 func New(opts ...KettleOption) (*Kettle, error) {
-	k := &Kettle{
-		name:     "kettle",
-		tickTime: 30,
-	}
-
+	k := &Kettle{name: "kettle", tickTime: 30}
 	for _, opt := range opts {
 		opt.Apply(k)
 	}
