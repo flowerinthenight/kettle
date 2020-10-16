@@ -8,15 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
 	"github.com/gomodule/redigo/redis"
 	uuid "github.com/satori/go.uuid"
-)
-
-var (
-	red   = color.New(color.FgRed).SprintFunc()
-	green = color.New(color.FgGreen).SprintFunc()
 )
 
 // DistLocker abstracts a distributed locker.
@@ -62,6 +56,14 @@ func (w withTickTime) Apply(o *Kettle) { o.tickTime = int64(w) }
 // WithTickTime configures a Kettle instance's tick timer in seconds.
 func WithTickTime(v int64) KettleOption { return withTickTime(v) }
 
+type withLogger struct{ l *log.Logger }
+
+// Apply applies a logger object to a Kettle instance.
+func (w withLogger) Apply(o *Kettle) { o.logger = w.l }
+
+// WithLogger sets the logger option.
+func WithLogger(v *log.Logger) KettleOption { return withLogger{v} }
+
 // Kettle provides functions that abstract the master election of a group of workers
 // at a given interval time.
 type Kettle struct {
@@ -75,6 +77,7 @@ type Kettle struct {
 	masterQuit chan error  // signal master set to quit
 	masterDone chan error  // master termination done
 	tickTime   int64
+	logger     *log.Logger
 }
 
 // Name returns the instance's name.
@@ -89,58 +92,11 @@ func (k Kettle) IsMaster() bool { return k.isMaster() }
 // Pool returns the configured Redis connection pool.
 func (k Kettle) Pool() *redis.Pool { return k.pool }
 
-func (k Kettle) info(v ...interface{}) {
-	if !k.verbose {
-		return
-	}
-
-	m := fmt.Sprintln(v...)
-	log.Printf("%s %s", green("[info]"), m)
-}
-
-func (k Kettle) infof(format string, v ...interface{}) {
-	if !k.verbose {
-		return
-	}
-
-	m := fmt.Sprintf(format, v...)
-	log.Printf("%s %s", green("[info]"), m)
-}
-
-func (k Kettle) error(v ...interface{}) {
-	if !k.verbose {
-		return
-	}
-
-	m := fmt.Sprintln(v...)
-	log.Printf("%s %s", red("[error]"), m)
-}
-
-func (k Kettle) errorf(format string, v ...interface{}) {
-	if !k.verbose {
-		return
-	}
-
-	m := fmt.Sprintf(format, v...)
-	log.Printf("%s %s", red("[error]"), m)
-}
-
-func (k Kettle) fatal(v ...interface{}) {
-	k.error(v...)
-	os.Exit(1)
-}
-
-func (k Kettle) fatalf(format string, v ...interface{}) {
-	k.errorf(format, v...)
-	os.Exit(1)
-}
-
 func (k Kettle) isMaster() bool {
 	if atomic.LoadInt32(&k.master) == 1 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func (k *Kettle) setMaster() {
@@ -149,8 +105,10 @@ func (k *Kettle) setMaster() {
 		return
 	}
 
-	k.infof("[%v] %v set to master", k.name, k.hostname)
 	atomic.StoreInt32(&k.master, 1)
+	if k.verbose {
+		k.logger.Printf("[%v] %v set to master", k.name, k.hostname)
+	}
 }
 
 func (k *Kettle) doMaster() {
@@ -223,6 +181,10 @@ func New(opts ...KettleOption) (*Kettle, error) {
 	k := &Kettle{name: "kettle", tickTime: 30}
 	for _, opt := range opts {
 		opt.Apply(k)
+	}
+
+	if k.logger == nil {
+		k.logger = log.New(os.Stdout, "[kettle] ", 0)
 	}
 
 	if k.lock == nil {
