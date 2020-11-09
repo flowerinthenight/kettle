@@ -32,6 +32,14 @@ func (w withName) Apply(o *Kettle) { o.name = string(w) }
 // WithName configures Kettle instance's name.
 func WithName(v string) KettleOption { return withName(v) }
 
+type withNodeName string
+
+// Apply applies a name to a Kettle instance.
+func (w withNodeName) Apply(o *Kettle) { o.nodeName = string(w) }
+
+// WithName configures Kettle instance's name.
+func WithNodeName(v string) KettleOption { return withNodeName(v) }
+
 type withVerbose bool
 
 // Apply applies a verbosity value to a Kettle instance.
@@ -71,8 +79,8 @@ type Kettle struct {
 	verbose    bool
 	pool       *redis.Pool
 	lock       DistLocker
-	master     int32 // 1 if we are master, otherwise, 0
-	hostname   string
+	master     int32       // 1 if we are master, otherwise, 0
+	nodeName   string      // should be unique per node
 	startInput *StartInput // copy of StartInput
 	masterQuit chan error  // signal master set to quit
 	masterDone chan error  // master termination done
@@ -102,7 +110,7 @@ func (k *Kettle) setMaster() {
 
 	atomic.StoreInt32(&k.master, 1)
 	if k.verbose {
-		k.logger.Printf("[%v] %v set to master", k.name, k.hostname)
+		k.logger.Printf("[%v] %v set to master", k.name, k.nodeName)
 	}
 }
 
@@ -150,9 +158,11 @@ func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) 
 	}
 
 	k.startInput = in
-	hostname, _ := os.Hostname()
-	hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
-	k.hostname = hostname
+	if k.nodeName == "" {
+		hostname, _ := os.Hostname()
+		hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
+		k.nodeName = hostname
+	}
 
 	k.masterQuit = make(chan error, 1)
 	k.masterDone = make(chan error, 1)
