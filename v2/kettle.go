@@ -92,12 +92,7 @@ func (k Kettle) IsMaster() bool { return k.isMaster() }
 // Pool returns the configured Redis connection pool.
 func (k Kettle) Pool() *redis.Pool { return k.pool }
 
-func (k Kettle) isMaster() bool {
-	if atomic.LoadInt32(&k.master) == 1 {
-		return true
-	}
-	return false
-}
+func (k Kettle) isMaster() bool { return atomic.LoadInt32(&k.master) == 1 }
 
 func (k *Kettle) setMaster() {
 	if err := k.lock.Lock(); err != nil {
@@ -172,7 +167,6 @@ func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) 
 	}()
 
 	go k.doMaster()
-
 	return nil
 }
 
