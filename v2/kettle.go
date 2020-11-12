@@ -91,6 +91,9 @@ type Kettle struct {
 // Name returns the instance's name.
 func (k Kettle) Name() string { return k.name }
 
+// Name returns the node's unique name.
+func (k Kettle) NodeName() string { return k.nodeName }
+
 // IsVerbose returns the verbosity setting.
 func (k Kettle) IsVerbose() bool { return k.verbose }
 
