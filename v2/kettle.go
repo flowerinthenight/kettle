@@ -205,7 +205,8 @@ func New(opts ...KettleOption) (*Kettle, error) {
 		rs := redsync.New(pools)
 		k.lock = rs.NewMutex(
 			fmt.Sprintf("%v-distlocker", k.name),
-			redsync.SetExpiry(time.Second*time.Duration(k.tickTime)),
+			redsync.SetExpiry(time.Second*time.Duration(k.tickTime-1)),
+			redsync.SetTries(1),
 		)
 	}
 
