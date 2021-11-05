@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/flowerinthenight/kettle.svg?style=svg)](https://circleci.com/gh/flowerinthenight/kettle)
+[![Go Reference](https://pkg.go.dev/badge/github.com/flowerinthenight/kettle.svg)](https://pkg.go.dev/github.com/flowerinthenight/kettle)
 
 ## Overview
 `kettle` is a simple library that abstracts the use of distributed locking to elect a master among group of workers at a specified time interval. The elected master will then call the "master" function. This library uses [Redis](https://redis.io/) as the default [distributed locker](https://redis.io/topics/distlock).
