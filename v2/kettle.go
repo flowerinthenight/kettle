@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/go-redsync/redsync"
+	"github.com/gofrs/uuid/v5"
 	"github.com/gomodule/redigo/redis"
-	uuid "github.com/satori/go.uuid"
 )
 
 // DistLocker abstracts a distributed locker.
@@ -163,7 +163,8 @@ func (k *Kettle) Start(ctx context.Context, in *StartInput, done ...chan error) 
 	k.startInput = in
 	if k.nodeName == "" {
 		hostname, _ := os.Hostname()
-		hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
+		id, _ := uuid.NewV4()
+		hostname = hostname + fmt.Sprintf("__%v", id)
 		k.nodeName = hostname
 	}
 
