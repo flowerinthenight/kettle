@@ -9,9 +9,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-redsync/redsync"
+	"github.com/gofrs/uuid/v5"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -199,7 +199,8 @@ func (k *Kettle) Start(in *StartInput) error {
 
 	k.startInput = in
 	hostname, _ := os.Hostname()
-	hostname = hostname + fmt.Sprintf("__%s", uuid.NewV4())
+	id, _ := uuid.NewV4()
+	hostname = hostname + fmt.Sprintf("__%v", id)
 	k.hostname = hostname
 
 	k.masterQuit = make(chan error, 1)
