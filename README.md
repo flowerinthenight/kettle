@@ -1,4 +1,4 @@
-[![Go](https://github.com/flowerinthenight/kettle/actions/workflows/main.yml/badge.svg)](https://github.com/flowerinthenight/kettle/actions/workflows/main.yml)
+[![main](https://github.com/flowerinthenight/kettle/actions/workflows/main.yml/badge.svg)](https://github.com/flowerinthenight/kettle/actions/workflows/main.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/flowerinthenight/kettle.svg)](https://pkg.go.dev/github.com/flowerinthenight/kettle)
 
 ## Overview
