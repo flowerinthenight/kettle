@@ -7,7 +7,7 @@
 ## How it works
 All workers that share the same name will attempt to grab a Redis lock to become the master. A provided master function will be executed by the node that successfully grabbed the lock. A single node works as well, in which case, that node will run both as master and a worker.
 
-The main changes in v2.x.x is the use of context for termination and an optional 'done' channel for notification. It looks something like this:
+The main changes in `v2.x.x` is the use of context for termination and an optional `done` channel for notification. It looks something like this:
 
 ```go
 name := "kettle-example"
@@ -71,4 +71,4 @@ REDIS_TIMEOUT_SECONDS=5
 ```
 
 ## Example
-A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/v2/simple/main.go) for reference. Try running it simultaneously on multiple nodes. For the version 0.x.x example, check it out [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go).
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/v2/simple/main.go) for reference. Try running it simultaneously on multiple nodes. For the `v0.x.x` example, check it out [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go).
