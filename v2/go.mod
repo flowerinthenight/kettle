@@ -3,12 +3,12 @@ module github.com/flowerinthenight/kettle/v2
 go 1.21
 
 require (
-	github.com/go-redsync/redsync v1.4.2
-	github.com/gofrs/uuid/v5 v5.3.0
-	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/go-redsync/redsync v1.0.1
+	github.com/gofrs/uuid/v5 v5.4.0
+	github.com/gomodule/redigo v1.9.3
 )
 
 require (
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/garyburd/redigo v1.6.4 // indirect
+	github.com/stvp/tempredis v0.0.0-20231107154819-8a695b693b9c // indirect
 )
