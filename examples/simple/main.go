@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
-	"github.com/flowerinthenight/kettle"
+	"github.com/flowerinthenight/kettle/v2"
 )
 
 type app struct {
@@ -27,27 +28,20 @@ func main() {
 	// Our app object abstraction.
 	name := "kettle-simple-example"
 	a := &app{Name: name}
-
-	k, err := kettle.New(
-		kettle.WithName(name),
-		kettle.WithVerbose(true),
-	)
-
+	k, err := kettle.New(kettle.WithName(name), kettle.WithVerbose(true))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Store reference to kettle.
-	a.K = k
-
+	a.K = k // store reference to kettle
+	quit, cancel := context.WithCancel(context.TODO())
+	done := make(chan error, 1)
 	in := kettle.StartInput{
-		Master:    a.DoMaster,       // called when we are master
-		MasterCtx: k,                // context value that is passed to `Master` as parameter
-		Quit:      make(chan error), // tell kettle to exit
-		Done:      make(chan error), // kettle is done
+		Master:    a.DoMaster, // called when we are master
+		MasterCtx: k,          // context value that is passed to `Master` as parameter
 	}
 
-	err = k.Start(&in) // start kettle
+	err = k.Start(quit, &in, done) // start kettle
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,6 +52,6 @@ func main() {
 		time.Sleep(time.Second * 2)
 	}
 
-	in.Quit <- nil // terminate
-	<-in.Done      // wait
+	cancel() // terminate
+	<-done   // wait
 }

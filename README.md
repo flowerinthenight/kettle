@@ -71,4 +71,4 @@ REDIS_TIMEOUT_SECONDS=5
 ```
 
 ## Example
-A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/v2/simple/main.go) for reference. Try running it simultaneously on multiple nodes. For the `v0.x.x` example, check it out [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go).
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference. Try running it simultaneously on multiple nodes.
