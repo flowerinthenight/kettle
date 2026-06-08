@@ -8,7 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redsync/redsync"
+	redsyncv4 "github.com/go-redsync/redsync/v4"
+	redsyncredigo "github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gofrs/uuid/v5"
 	"github.com/gomodule/redigo/redis"
 )
@@ -202,12 +203,11 @@ func New(opts ...KettleOption) (*Kettle, error) {
 		}
 
 		k.pool = pool
-		pools := []redsync.Pool{pool}
-		rs := redsync.New(pools)
+		rs := redsyncv4.New(redsyncredigo.NewPool(pool))
 		k.lock = rs.NewMutex(
 			fmt.Sprintf("%v-distlocker", k.name),
-			redsync.SetExpiry(time.Second*time.Duration(k.tickTime-1)),
-			redsync.SetTries(1),
+			redsyncv4.WithExpiry(time.Second*time.Duration(k.tickTime-1)),
+			redsyncv4.WithTries(1),
 		)
 	}
 
