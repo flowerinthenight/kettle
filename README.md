@@ -7,34 +7,7 @@
 ## How it works
 All workers that share the same name will attempt to grab a Redis lock to become the master. A provided master function will be executed by the node that successfully grabbed the lock. A single node works as well, in which case, that node will run both as master and a worker.
 
-The main changes in v2.x.x is the use of context for termination and an optional 'done' channel for notification. It looks something like this:
-
-```go
-name := "kettle-example"
-k, _ := kettle.New(kettle.WithName(name), kettle.WithVerbose(true))
-in := kettle.StartInput{
-    // Our master callback function.
-    Master: func(v interface{}) error {
-        kt := v.(*kettle.Kettle)
-        log.Println("from master, name:", kt.Name())
-        return nil
-    },
-    MasterCtx: k, // arbitrary data that is passed to master function
-}
-
-ctx, cancel := context.WithCancel(context.TODO())
-done := make(chan error, 1)
-err = k.Start(ctx, &in, done)
-_ = err
-
-// Simulate work
-time.Sleep(time.Second * 5)
-cancel() // terminate
-<-done   // wait
-```
-
-
-For version 0.x.x, it looks something like this:
+Basic usage looks something like this:
 
 ```go
 name := "kettle-example"
@@ -71,4 +44,4 @@ REDIS_TIMEOUT_SECONDS=5
 ```
 
 ## Example
-A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/v2/simple/main.go) for reference. Try running it simultaneously on multiple nodes. For the version 0.x.x example, check it out [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go).
+A simple example is provided [here](https://github.com/flowerinthenight/kettle/blob/master/examples/simple/main.go) for reference. Try running it simultaneously on multiple nodes.
